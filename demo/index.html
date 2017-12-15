@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+	<style>
+		*{
+			margin: 0;
+			padding: 0;
+		}
+	</style>
+</head>
+<body>
+	<button id="connect">请求建立链接</button>
+	<button id="send">发送数据</button>
+</body>
+<script src="/assets/index.js"></script>
+<script type="text/javascript">
+	document.querySelector('#connect').addEventListener('click', function() {
+		loader.connect();
+	})
+
+	document.querySelector('#send').addEventListener('click', function() {
+		var buffer = new ArrayBuffer(16);
+
+		var int32View = new Int32Array(buffer);
+
+		for (var i=0; i<int32View.length; i++) {
+			int32View[i] = i*2;
+		}
+		loader.send(buffer);
+	})
+
+	var loader = new chimeeWebrtc({
+		peer_id: 1,
+		websocketUrl: "ws://127.0.0.1:8576",
+		url: 'http://yunxianchang.live.ujne7.com/vod-system-bj/112_3965342e419-15b4-4be4-b7e4-6a152ee82d06.mp4'
+	});
+</script>
+</html>
