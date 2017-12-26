@@ -1,3 +1,5 @@
+'use strict';
+
 import WebRTC from './index';
 import {CustEvent} from 'chimee-helper';
 
@@ -14,8 +16,19 @@ export default class Rtcloader extends CustEvent {
   createWebsocket () {
     const socket = this.socket = new WebSocket(this.config.websocketUrl);
     socket.addEventListener('open', ()=>{
-      this.socketSend({'type': 'mediaInfo', url: this.config.url});
-      this.getAvailableNodes();
+      this.socketSend({'type': 'userInfo', userInfo: {
+        uid: this.config.uid,
+        url: this.config.url,
+        area: this.config.area,
+        operator: this.config.operator
+      }});
+      this.getAvailableNodes('url=' + this.config.url + '&uid=' + this.config.uid).then((nodes)=>{
+        this.nodes = JSON.parse(nodes);
+        if(this.nodes.length > 0) {
+          this.socket.send(JSON.stringify({type: 'nodes', nodes: this.nodes}));
+          this.connect();
+        }
+      });
     });
 
     socket.addEventListener('message', (event)=> {
@@ -27,13 +40,27 @@ export default class Rtcloader extends CustEvent {
     });
     socket.addEventListener('error', ()=>{
       console.log('error');
-    });
+    })
   }
   /*
   * 获取可以用的节点信息
   */
-  getAvailableNodes () {
-
+  getAvailableNodes (query) {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', 'http://127.0.0.1:9527/getAvailableNodes?' + query, true);
+    return new Promise((res, rej)=> {
+      xhr.onload = function (e) {
+        res(e.target.response);
+      };
+      xhr.onreadystatechange = function () {
+        if (this.readyState === 2) {
+          if ((this.status < 200 && this.status > 299)) {
+            rej('获取节点错误');
+          }
+        }
+      };
+      xhr.send();
+    });
   }
 
   socketSend (data) {
@@ -48,7 +75,7 @@ export default class Rtcloader extends CustEvent {
 
   webrtcEvent () {
     this.webrtc.on('signal', (desc)=>{
-			const sdesc = JSON.stringify(desc.data);
+      const sdesc = JSON.stringify(desc.data);
 			this.socket.send(sdesc);
     });
     

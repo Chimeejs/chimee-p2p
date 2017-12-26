@@ -46,13 +46,10 @@ export default class WebRTC extends CustEvent {
     };
     this.createDatachannel();
     this.peerConnection.oniceconnectionstatechange = (evt)=> {
-    //   console.log('iceConnectionState: ' + self.peerConnection.iceConnectionState);
-    //   console.log('signalingstate:' + self.peerConnection.signalingState);
-    //   if (this.peerConnection.signalingState === 'stable' && !this.isDataChannelCreating) {
-    //     console.log('[pear_webrtc] oniceconnectionstatechange stable');
-    //     this.createDatachannel();
-    //     this.isDataChannelCreating = true;
-    //   }
+      if (this.peerConnection.signalingState === 'stable' && !this.isDataChannelCreating) {
+        this.createDatachannel();
+        this.isDataChannelCreating = true;
+      }
     };
     this.peerConnection.ondatachannel = (evt)=> {
       this.dataChannel = evt.channel;
@@ -66,12 +63,9 @@ export default class WebRTC extends CustEvent {
   sendOffer () {
     this.peerConnection.createOffer().then((desc)=> {
       this.currentoffer = desc;
-      console.log('Create an offer : \n' + JSON.stringify(desc));
       this.peerConnection.setLocalDescription(desc);
-      console.log('Offer Set as Local Desc');
       this.emit('signal', desc);
       this.sdp = desc.sdp;
-      console.log('Send offer:\n' + JSON.stringify(this.sdp));
     }, function (error) {
         console.log(error);
     });
@@ -81,10 +75,7 @@ export default class WebRTC extends CustEvent {
     try {
       this.dataChannel = this.peerConnection.createDataChannel('dataChannel', {ordered: true, reliable: true});
       this.dataChannel.binaryType = 'arraybuffer';
-      console.log('Channel [ ' + this.dataChannel.label + ' ] creating!');
-      console.log(this.dataChannel.label + ' Datachannel state: ' + this.dataChannel.readyState);
     }catch (dce) {
-        console.log('dc established error: ' + dce.message);
         this.emit('error', dce.message);
     }
     this.dataChannelEvents(this.dataChannel);
@@ -93,7 +84,6 @@ export default class WebRTC extends CustEvent {
   dataChannelEvents (channel) {
     channel.onopen = ()=> {
       console.log('Datachannel opened, current stateis :\n' + this.dataChannel.readyState);
-      console.log(channel);
       this.emit('connect', this.dataChannel.readyState);
     };
 
@@ -112,6 +102,7 @@ export default class WebRTC extends CustEvent {
   }
 
   signal (event) {
+    console.log(event);
     console.log('[pear_webrtc] event.type' + event.type);
     if (event.type === 'offer') {
       this.receiveOffer(event);
@@ -125,13 +116,10 @@ export default class WebRTC extends CustEvent {
 
   receiveOffer (evt) {
     this.peerConnection.setRemoteDescription(new RTCSessionDescription(evt));
-    console.log('Received Offer, and set as Remote Desc:\n' + evt.sdp);
     this.peerConnection.createAnswer().then((desc)=> {
       this.peerConnection.setLocalDescription(desc, ()=>{
         this.currentoffer = desc;
         this.sdp = desc.sdp;
-        console.log('Create Answer, and set as Local Desc:\n' + JSON.stringify(desc));
-        // socketSend(desc);
         this.emit('signal', desc);
       });
     }, function (err) {
@@ -139,15 +127,15 @@ export default class WebRTC extends CustEvent {
     });
   }
   receiveAnswer (answer) {
-    console.log('Received remote Answer: \n' + JSON.stringify(answer));
     this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-    console.log('already set remote desc, current ice gather state: ' + this.peerConnection.iceGatheringState);
   }
 
   receiveIceCandidate (evt) {
     if (evt) {
-      console.log('Received and add candidate:\n' + JSON.stringify(evt));
-      this.peerConnection.addIceCandidate(new RTCIceCandidate(evt));
+      this.peerConnection.addIceCandidate(new RTCIceCandidate(evt)).then(_=>{
+      }).catch(e=>{
+        console.log(e);
+      });;
     } else{
       return;
     }

@@ -16,6 +16,11 @@
 </body>
 <script src="/assets/index.js"></script>
 <script type="text/javascript">
+	// if(!localStorage.uid) {
+	// 	localStorage.uid = (new Date() - 0).toString();
+	// }
+	var qarr = location.search.slice(1).split("=");
+	
 	document.querySelector('#connect').addEventListener('click', function() {
 		loader.connect();
 	})
@@ -34,7 +39,10 @@
 	var loader = new chimeeWebrtc({
 		peer_id: 1,
 		websocketUrl: "ws://127.0.0.1:8576",
-		url: 'http://yunxianchang.live.ujne7.com/vod-system-bj/112_3965342e419-15b4-4be4-b7e4-6a152ee82d06.mp4'
+		url: 'http://yunxianchang.live.ujne7.com/vod-system-bj/112_3965342e419-15b4-4be4-b7e4-6a152ee82d06.mp4',
+		uid: qarr[1],
+		area: 'bj',
+		operator: 'cmcc'
 	});
 </script>
 </html>
